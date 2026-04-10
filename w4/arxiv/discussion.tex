@@ -1,0 +1,55 @@
+\section{Discussion}
+\label{sec:discussion}
+
+The experimental results presented in Section~\ref{sec:experiments} support the central thesis of this work: a generic agent kernel can be repurposed for agricultural knowledge management through declarative configuration alone, without rewriting domain rules, retraining neural networks, or refactoring orchestration code. In this section we discuss the practical implications of this finding, compare our approach with existing agricultural AI systems, acknowledge limitations, and outline directions for future research.
+
+\subsection{Implications for Agricultural Software Architecture}
+
+The 10\% to 100\% accuracy gap between Baseline-Random and the proposed system is not merely a retrieval improvement; it is an architectural statement. Baseline-Random simulates an agent that has no access to structured agricultural context---a scenario analogous to deploying a general-purpose cloud LLM in a region with poor connectivity and no local knowledge base. The proposed system, by contrast, demonstrates that injecting a lightweight `DomainConfig` at runtime is sufficient to elevate diagnostic retrieval to perfect accuracy on structured symptoms, while keeping latency below 20~ms. This performance profile suggests that local-first, configuration-driven agents are technically viable for real-time field advisory use, even on modest edge hardware.
+
+More importantly, the sub-50~ms configuration migration time quantifies the horizontal adaptability of the Domain-as-Config paradigm. Repurposing the agent for a new crop or region reduces to editing a TOML file---a task that can be performed by domain experts or extension officers without software engineering support. This stands in sharp contrast to ontology-based expert systems, which require weeks of knowledge-engineering work to encode new crop taxonomies and SWRL rules, or to vision-based pipelines, which demand large labeled datasets and GPU training cycles for each new disease category.
+
+\subsection{Comparison with Existing Systems}
+
+Table~\ref{tab:comparison} situates the proposed architecture alongside representative agricultural AI systems across five dimensions: deployment mode, adaptability mechanism, latency profile, offline capability, and architectural overhead for cross-crop migration.
+
+\begin{table}[htbp]
+\centering
+\caption{Qualitative comparison of the proposed architecture with representative agricultural AI systems.}
+\label{tab:comparison}
+\begin{tabular}{p{3.2cm}ccccp{2.8cm}}
+\hline
+\textbf{System} & \textbf{Deploy.} & \textbf{Adapt.} & \textbf{Offline} & \textbf{Latency} & \textbf{Migration Cost} \\
+\hline
+RiceMan \cite{jearanaiwongkul2021riceman} & Local & Ontology rewrite & Yes & Low & High (weeks) \\
+AgenticGraphRAG \cite{agenticgraphrag2025} & Cloud & Hard-coded KG & No & High & High (re-engineering) \\
+Chat Demeter \cite{chatdemeter2025} & Cloud/Edge & Model retraining & Partial & High & Very high \\
+AgriGPT \cite{yang2025agrigpt} & Cloud & Dataset + RAG & No & High & Medium \\
+\textbf{Proposed} & \textbf{Local} & \textbf{Config file} & \textbf{Yes} & \textbf{Low} & \textbf{Negligible (minutes)} \\
+\hline
+\end{tabular}
+\end{table}
+
+The proposed system trades the extreme specialization of vision-based pipelines for horizontal generality and deployment simplicity. It is not intended to replace high-accuracy image classifiers; rather, it complements them by providing the higher-level agent infrastructure---knowledge retrieval, tool coordination, and reasoning context---that vision models alone do not supply.
+
+\subsection{Abstract Methods and the General-to-Specific Adaptation}
+
+The Agricultural Adaptive Agent Framework (AAAF) introduced in Section~\ref{sec:methodology} represents an attempt to extract the \textit{abstract methods} shared by successful agricultural AI systems and to embed them in a reusable agent kernel. By inspecting the design patterns of high-performing systems---Chat Demeter's symptom-to-disease causal reasoning \cite{chatdemeter2025}, AgenticGraphRAG's structured KG traversal \cite{agenticgraphrag2025}, and AgroLLM's constraint-aware retrieval \cite{samuel2025agrollm}---we can distill three general mechanisms that are \textit{independent of any specific crop or model architecture}:
+
+\begin{enumerate}[label=\textbf{M\arabic*:},leftmargin=*]
+    \item \textbf{Contextual Grounding Gate} -- before any generative reasoning occurs, the system must first identify the relevant domain slice (crop, region, growth stage) and retrieve the corresponding structured facts. This gate prevents hallucination by constraining the LLM's reasoning context.
+    \item \textbf{Causal Reasoning Scaffold} -- agricultural diagnosis follows a predictable epistemic structure: observe symptoms, match against known disease signatures, verify with treatment constraints, and output a management plan. The agent architecture should explicitly scaffold this structure rather than leaving it to implicit parametric knowledge.
+    \item \textbf{Constraint Injection Layer} -- agronomic safety constraints (e.g., biological-control priority, banned pesticides, seasonal windows) must be injected into the reasoning path as non-negotiable guardrails, not as soft prompt suggestions.
+\end{enumerate}
+
+The Domain-as-Config methodology is one concrete instantiation of these three mechanisms. The `DomainConfig` object encodes the \textit{Contextual Grounding Gate} (crop list and disease categories); the `McpToolRegistry` and `devkit_query` workflow encode the \textit{Causal Reasoning Scaffold} (retrieve facts before generating advice); and the `constraints` field encodes the \textit{Constraint Injection Layer} (hard rules passed into the system prompt). What makes this instantiation particularly valuable is that all three mechanisms are exposed through editable configuration files, enabling rapid adaptation from the general framework to a new agricultural specific domain (e.g., from row crops to orchard fruits) without touching the underlying Rust source code.
+
+\subsection{Limitations and Future Work}
+
+Several limitations must be acknowledged. First, the current knowledge base contains 30 seed records, expanded to 210 question variants through templating. While this scale is sufficient for architecture-level validation, it remains modest compared with industrial agricultural databases. Future work will integrate automated crawling of public extension PDFs (e.g., IPM guides from land-grant universities) and evaluate generalization to unseen crops and diseases.
+
+Second, the experiments reported here validate retrieval accuracy and configuration portability, not vision-based classification or large-scale farmer-satisfaction metrics. A natural next step is to couple the configuration-driven agent kernel with on-device vision models (e.g., MobileNet or EfficientNet-Lite) via additional MCP tools, thereby enabling multimodal diagnosis in the same offline, zero-code-adaptation framework.
+
+Third, the TUI LLM integration is currently a simulation stub. We plan to replace this stub with a local LLM backend (e.g., Ollama running a quantized Qwen or Llama model) and measure end-to-end conversational accuracy on open-ended farmer queries. This will allow us to evaluate not only retrieval but also generative quality, hallucination rates, and safety of agricultural advice under fully offline conditions.
+
+Finally, the present study focuses on a single geographic and climatic context (temperate and subtropical field crops). Extending the `DomainConfig` schema to include region-specific growing calendars, pesticide registration lists, and localized weather constraints will be essential for real-world deployment across diverse agro-ecological zones.

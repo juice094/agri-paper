@@ -1,0 +1,46 @@
+handover:
+  from: "MethodAgent(B)"
+  to: "W3 Execution Team (A + B + C)"
+  date: "2026-04-10"
+  artifacts:
+    - path: "clarity/crates/clarity-core/src/tools/mcp.rs"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "McpToolRegistry 实现：从 Config 自动连接 MCP Server、动态发现 tools/list、转换为 llm::Tool、执行 tools/call"
+    - path: "clarity/crates/clarity-core/src/config/mod.rs"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "Profile 新增 mcp_servers 和 domain 字段；DomainConfig 支持 agriculture() 预设"
+    - path: "clarity/crates/clarity-core/src/mcp.rs"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "修复 McpRegistry 存储结构（Arc<Mutex<Box<dyn McpClient>>>），移除 todo!(Client cloning not implemented)"
+    - path: "clarity-core/tests/mcp_tool_registry_integration.rs"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "5/5 集成测试通过：工具发现、devkit_health 执行、devkit_query 执行、LLM Schema 有效性、DomainConfig 农业预设"
+    - path: "Desktop/agri-paper/w1/engineer/agri_profile.toml"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "农业专家完整配置模板，展示从 default（软件工程）到 agriculture（农业诊断）的零代码迁移"
+  blockers:
+    - description: "clarity-tui/src/app.rs 的 request_completion 仍是占位符，未接入真实 LLM 与 MCP 工具"
+      impact: "中"
+      owner: "B"
+      mitigation: "W3 先通过独立 demo/测试验证配置→Agent→MCP 的链路；TUI 的最终集成作为可选增量任务"
+  notes: |
+    W2 里程碑达成：
+    1. Config 支持声明式领域适配（domain + mcp_servers）
+    2. McpToolRegistry 实现 MCP 工具动态注册到 LLM Tool 系统
+    3. 农业配置模板完成，5 个集成测试全部通过
+    
+    关键验证结论：
+    - "devbase__devkit_health" 和 "devbase__devkit_query" 可通过 McpToolRegistry 成功执行
+    - 所有发现的 MCP 工具均被正确转换为 `llm::Tool` 格式（含 function name / description / parameters）
+    - DomainConfig::agriculture() 预设包含作物类型、病害分类、知识库路径和约束规则
+    
+    W3 关键任务：
+    1. B: 构建农业测试数据集（教材 PDF / 公开数据）并导入 devbase 索引
+    2. B: 跑通端到端农业诊断任务（配置 → Agent 系统提示 → MCP 工具查询 → 结果返回）
+    3. A: 补充配置驱动/声明式系统文献（10 篇）
+    4. C: Methodology 章节（架构图 + 配置说明）

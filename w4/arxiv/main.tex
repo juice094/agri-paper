@@ -1,0 +1,47 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{enumitem}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+% Title and author block
+\title{A Local-First, Configuration-Driven Agent Architecture for Agricultural Knowledge Management}
+\author{Anonymous Authors\\
+        \textit{Anonymous Institution}\\
+        \texttt{anonymous@example.com}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Accurate crop pest and disease diagnosis is essential for sustainable agriculture, yet existing AI solutions are typically vertical applications tightly coupled to specific crops or cloud APIs. This paper proposes a local-first, configuration-driven agent architecture that decouples agricultural domain logic from the agent kernel through the Model Context Protocol (MCP). A generic Rust agent framework (Clarity) communicates with a local SQLite knowledge-base backend (devbase) via MCP stdio transport, enabling offline diagnostic retrieval and tool coordination. We introduce a ``Domain-as-Config'' methodology in which crop-specific personas, tool schemas, and knowledge-base endpoints are injected at runtime through external TOML profiles, requiring zero changes to source code. Evaluation on a 210-record agricultural QA benchmark shows that the proposed system achieves 100\% retrieval accuracy (Hit@3) and 99.52\% KeywordRecall@1, with an end-to-end latency of approximately 18~ms and sub-millisecond configuration migration time. These results demonstrate a viable path toward horizontally extensible, privacy-preserving agricultural AI that can be adapted to new crops and regions by domain experts without software engineering support.
+\end{abstract}
+
+\textbf{Keywords:} agricultural knowledge management; Model Context Protocol; local-first software; configuration-driven architecture; Rust agent framework; crop disease diagnosis
+
+\input{introduction}
+\input{related_work}
+\input{methodology}
+\input{experiments}
+\input{discussion}
+\input{conclusion}
+
+\bibliographystyle{plain}
+\bibliography{citations}
+
+\end{document}

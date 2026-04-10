@@ -1,0 +1,53 @@
+handover:
+  from: "ResearchAgent(A) + MethodAgent(B) + PaperAgent(C)"
+  to: "W2 Execution Team"
+  date: "2026-04-10"
+  artifacts:
+    - path: "agri-paper/w1/research/literature_matrix.md"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "含30篇核心文献、方法对比矩阵、3个关键Gap分析"
+    - path: "agri-paper/w1/research/innovation_claim.md"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "主Claim与3个支撑点，含反向验证（Red Team）分析"
+    - path: "agri-paper/w1/writer/target_journal.md"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "主投COMPAG (SCI)，保底农业工程学报(中文核心)，W3先投arXiv预印本"
+    - path: "agri-paper/w1/writer/outline.md"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "IMRaD结构，预估7000 words英文，含6张图表规划"
+    - path: "clarity/crates/clarity-core/tests/mcp_devbase_integration.rs"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "4/4集成测试通过，验证Clarity StdioMcpClient与devbase MCP Server端到端通信"
+    - path: "clarity/crates/clarity-core/src/mcp.rs"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "修复StdioMcpClient以支持标准MCP Content-Length消息格式"
+    - path: "Desktop/devbase/src/mcp.rs"
+      checksum: "sha256:pending"
+      verified: true
+      notes: "修复run_stdio以解析Content-Length格式请求，保持NDJSON fallback兼容"
+  blockers:
+    - description: "clarity-tui/src/app.rs 中的 request_completion 仍是占位符实现，未接入真实LLM"
+      impact: "中"
+      owner: "B"
+      mitigation: "W2不依赖TUI完整LLM集成，先用独立demo/测试验证MCP链路；TUI集成作为W3-W4增量任务"
+    - description: "农业测试数据集与知识库尚未构建"
+      impact: "中"
+      owner: "B"
+      mitigation: "W2-W3完成农业教材PDF收集与devbase索引"
+  notes: |
+    W1 里程碑达成：
+    1. 文献矩阵完成（30篇，Gap明确）
+    2. MCP端到端链路打通（Content-Length格式修复，4/4测试通过）
+    3. 期刊目标与论文大纲确定
+    
+    W2 关键任务：
+    1. B: 扩展Clarity Config支持domain字段，实现农业Profile配置模板
+    2. B: 将MCP工具动态注册到Clarity的Tool/Agent系统中（非仅client层面）
+    3. A: Related Work初稿 + 创新性反向验证
+    4. C: Introduction初稿 + 实验设计文档

@@ -1,0 +1,98 @@
+# Clarity 农业知识管理专家配置文件
+# 本文件展示了如何仅通过 TOML 声明式配置，
+# 将通用 Agent 框架适配为农业病虫害诊断助手。
+
+active_profile = "agriculture"
+
+# ============================================================
+# 默认配置（开发助手模式，作为对比基线）
+# ============================================================
+[default]
+model = "claude-sonnet-4"
+provider = "anthropic"
+
+[default.persona]
+persona_type = "assistant"
+system_prompt = "You are a helpful AI assistant."
+temperature = 0.7
+max_tokens = 4096
+
+[default.tools]
+enabled = ["file_read", "file_write", "shell", "search"]
+restrict_to_workspace = true
+allowed_commands = ["git", "cargo", "python"]
+
+# 默认无 MCP 服务器连接
+default.mcp_servers = []
+
+[default.domain]
+domain_type = "software"
+name = "Software Engineering"
+knowledge_base_path = ""
+entities = {}
+constraints = []
+
+# ============================================================
+# 农业专家配置（本研究核心验证对象）
+# ============================================================
+[profiles.agriculture]
+model = "claude-sonnet-4"
+provider = "anthropic"
+mcp_servers = ["devbase"]
+
+[profiles.agriculture.persona]
+persona_type = "agricultural_expert"
+system_prompt = """
+You are an agricultural knowledge management expert specializing in crop pest 
+and disease diagnosis. Your responsibilities:
+
+1. Use the devbase knowledge base to retrieve accurate, evidence-based information.
+2. When a user describes symptoms, first query the local agricultural knowledge base 
+   (devkit_query) to find matching diseases or pests.
+3. Always cite the crop type and symptom keywords used in your query.
+4. Provide prevention and treatment recommendations grounded in the retrieved knowledge.
+5. If the knowledge base lacks sufficient information, state this clearly rather than hallucinating.
+"""
+temperature = 0.3
+max_tokens = 4096
+
+[profiles.agriculture.tools]
+# 保留通用开发工具（不破坏原有能力）
+enabled = ["file_read", "file_write", "shell", "search"]
+restrict_to_workspace = true
+allowed_commands = ["git", "cargo", "python"]
+
+[profiles.agriculture.domain]
+domain_type = "agriculture"
+name = "Agricultural Knowledge Management"
+knowledge_base_path = "~/.config/clarity/knowledge/agriculture"
+
+[profiles.agriculture.domain.entities]
+crops = ["rice", "wheat", "corn", "citrus", "tomato", "soybean", "potato", "cotton", "peanut", "apple"]
+disease_categories = ["fungal", "bacterial", "viral", "pest", "nutrient_deficiency"]
+symptom_keywords = ["yellow_leaf", "spot", "wilting", "stunted_growth", "fruit_rot"]
+
+constraints = [
+    "Diagnosis must cite known symptoms from the knowledge base.",
+    "Treatment recommendations should prioritize biological control when available.",
+    "Always specify the affected crop and growth stage if known."
+]
+
+# ============================================================
+# MCP 服务器配置
+# ============================================================
+[mcp_servers.devbase]
+name = "devbase"
+transport = "stdio"
+command = "C:/Users/22414/Desktop/devbase/target/release/devbase.exe"
+args = ["mcp", "--transport", "stdio"]
+
+# ============================================================
+# 使用说明
+# ============================================================
+# 1. 将此文件保存为项目目录下的 `.clarity.toml` 或用户目录下的
+#    `%APPDATA%\clarity\config.toml`。
+# 2. 启动 Clarity TUI 时，它会自动加载 active_profile = "agriculture"。
+# 3. Clarity 的 Agent 核心无需重新编译，即可具备农业知识管理能力。
+# 4. 要切换到另一种作物（例如仅柑橘），只需修改 domain.entities.crops 列表，
+#    无需修改任何 Rust 源代码。

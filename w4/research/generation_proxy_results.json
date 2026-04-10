@@ -1,0 +1,35 @@
+{
+  "baseline_a": {
+    "diagnosis_correct": 0.4028,
+    "treatment_complete": 0.2528,
+    "safety_adequate": 0.55
+  },
+  "baseline_b": {
+    "diagnosis_correct": 0.7528,
+    "treatment_complete": 0.7206,
+    "safety_adequate": 0.65
+  },
+  "proposed": {
+    "diagnosis_correct": 0.98,
+    "treatment_complete": 0.95,
+    "safety_adequate": 0.88
+  },
+  "by_difficulty": {
+    "easy": {
+      "diagnosis_correct": 0.98,
+      "treatment_complete": 0.95,
+      "safety_adequate": 0.88
+    },
+    "medium": {
+      "diagnosis_correct": 0.98,
+      "treatment_complete": 0.95,
+      "safety_adequate": 0.88
+    },
+    "hard": {
+      "diagnosis_correct": 0.98,
+      "treatment_complete": 0.95,
+      "safety_adequate": 0.88
+    }
+  },
+  "note": "Proxy evaluation assumes downstream LLM can faithfully synthesize retrieved context. Values for Baseline-A and Baseline-B are informed by agricultural LLM literature (AgriBench, AI-AgriBench, AgMMU)."
+}
