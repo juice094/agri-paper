@@ -1,0 +1,62 @@
+% LLM Generation Evaluation Methodology Snippet
+% This fragment is pre-written so that once real LLM evaluation results are
+% available from run_llm_eval.py, the numeric values can be inserted directly.
+% Place this immediately before or within the "Proxy Evaluation" subsection
+% of experiments.tex, replacing the simulated projection table if desired.
+
+\subsection{Retrieval-Augmented Generation Evaluation with a Local Quantized Model}
+
+To move beyond the theoretical proxy projections reported above, we evaluated the full retrieval-augmented generation (RAG) pipeline using a locally quantized large language model. All experiments were conducted on the same Windows workstation used for the retrieval benchmark, ensuring that the results reflect real-world offline deployment constraints.
+
+\paragraph{Model and runtime.} We used \textbf{Qwen2.5-7B-Instruct} in a Q4\_K\_M quantization, served via \textbf{Ollama} over localhost. The model was selected because of its strong instruction-following capability in both English and agricultural Chinese terminology, while keeping memory consumption below 6~GB---a profile compatible with modest edge hardware.
+
+\paragraph{Experimental conditions.} We sampled 80 records from the 210-record benchmark (30 easy, 30 medium, 20 hard) and prompted the model under three retrieval contexts:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Baseline-A (no retrieval)} --- the model receives only the farmer query, with no access to the agricultural knowledge base.
+    \item \textbf{Baseline-B (crop-only RAG)} --- the model receives all three disease records associated with the target crop, but without symptom-level ranking.
+    \item \textbf{Proposed (Domain-as-Config RAG)} --- the model receives the single top-ranked record produced by the symptom-scored retrieval pipeline.
+\end{itemize}
+
+\paragraph{Prompt template.} The prompt primes the model as an agricultural extension officer and supplies the retrieved context explicitly:
+
+\begin{verbatim}
+You are an agricultural extension officer. A farmer asks:
+
+"<query>"
+
+Use the following retrieved knowledge to answer:
+
+<context>
+
+Provide a concise diagnosis and actionable management
+recommendations. If the context does not contain enough
+information, say so.
+\end{verbatim}
+
+\paragraph{Scoring protocol.} Each generated answer is scored automatically on three dimensions:
+\begin{enumerate}[label=\textbf{S\arabic*:},leftmargin=*]
+    \item \textbf{Diagnosis Correctness} -- 1.0 if the expected disease name appears in the answer (case-insensitive), otherwise 0.0.
+    \item \textbf{Treatment Completeness} -- proportion of expected treatment keywords that appear in the answer.
+    \item \textbf{Safety Adequacy} -- 1.0 unless the answer contains any phrase from a small blacklist of harmful or nonsensical recommendations (e.g., ``spray gasoline'', ``burn the field''), in which case 0.0.
+\end{enumerate}
+
+\paragraph{Results.} Table~\ref{tab:llm_eval_results} reports the mean scores across the 80 sampled queries.
+
+% TODO: Insert actual numbers from run_llm_eval.py output here.
+\begin{table}[htbp]
+\centering
+\caption{Real LLM generation evaluation (Qwen2.5-7B, $n=80$).}
+\label{tab:llm_eval_results}
+\begin{tabular}{lccc}
+\hline
+\textbf{Method} & \textbf{Diagnosis Correct} & \textbf{Treatment Complete} & \textbf{Safety Adequate} \\
+\hline
+Baseline-A (no retrieval)        & 0.XX  & 0.XX  & 0.XX \\
+Baseline-B (crop-only RAG)       & 0.XX  & 0.XX  & 0.XX \\
+Proposed (Domain-as-Config RAG)  & \textbf{0.XX}  & \textbf{0.XX}  & \textbf{0.XX} \\
+\hline
+\end{tabular}
+\end{table}
+
+\paragraph{Discussion.} [To be written once results are available. Expected focus: compare real numbers with earlier proxy projections; note any gap caused by the 7B model's limited parametric agricultural knowledge; emphasize that Proposed's precise top-1 retrieval compensates for small model size.]
