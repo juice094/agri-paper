@@ -2,21 +2,30 @@
 """
 Generation Quality Proxy Evaluation
 
-Since local LLM inference is unavailable in the current environment,
-we evaluate a *proxy* for retrieval-augmented generation (RAG) quality:
+============================================================================
+⚠️  IMPORTANT DISCLAIMER — NO ACTUAL LLM WAS INVOKED IN THIS SCRIPT ⚠️
+============================================================================
 
-For each query, if the top-1 retrieved record contains:
-  (a) the expected disease name  → diagnosis correctness proxy
-  (b) the expected treatment keywords → management completeness proxy
+Since local LLM inference (Ollama) was unavailable in the environment where
+this project was developed, this script produces *simulated* proxy scores
+based on assumptions and published agricultural-LLM literature.
 
-then the downstream LLM has sufficient grounded context to generate
-a correct, actionable answer. This proxy is conservative but
-empirically justified because the retrieval pipeline achieves
-100% Hit@3 and 99.52% KeywordRecall@1 on the 210-record benchmark.
+The values for Baseline-A and Baseline-B are synthetic (drawn from Gaussian
+approximations informed by AgriBench / AI-AgriBench / AgMMU reports).
+The values for Proposed are hard-coded theoretical upper bounds inferred
+from retrieval accuracy, NOT measured outputs of a live generative model.
 
-We also simulate three model baselines conceptually:
+These numbers were previously presented in a formal table in the paper,
+which created a high risk of misinterpretation. The paper sources have
+since been corrected to explicitly label them as "projected proxy scores".
+
+DO NOT use this script as evidence of real LLM performance.
+For actual generation evaluation, see run_llm_eval.py (requires Ollama).
+============================================================================
+
+Conceptual baselines simulated:
   - Baseline-A: Pure parametric LLM (no retrieval)
-  - Baseline-B: Generic RAG (retrieve from full 30-record KB without crop filter)
+  - Baseline-B: Generic RAG (retrieve from crop's 3 records without ranking)
   - Proposed: Domain-as-Config RAG (crop-filtered + symptom-scored retrieval)
 """
 import json
