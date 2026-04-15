@@ -1,0 +1,14 @@
+# agri-paper Python dependencies
+# This project primarily uses the Python standard library only.
+# No third-party packages are strictly required for the existing scripts.
+#
+# The following packages are used for dataset generation and evaluation:
+# (all from the Python standard library)
+#   - json
+#   - random
+#   - pathlib
+#   - collections
+#
+# Optional dependencies for future work:
+#   requests>=2.31.0   # If adding HTTP-based crawlers or API clients
+#   pdfplumber>=0.10  # If extracting text from USDA IPM PDFs
