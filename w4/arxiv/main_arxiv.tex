@@ -178,7 +178,7 @@ profiles.agriculture.domain.constraints = [
 
 This three-part configuration enables what we term \textit{horizontal migration}: switching the agent from software engineering to agriculture, or from rice to wheat, involves no recompilation, no model retraining, and no ontology rewriting. The migration cost is reduced from hours of engineering to minutes of profile editing.
 
-The integration tests (`agriculture\_validation.rs`, `agriculture\_end\_to\_end.rs`) load the agriculture profile directly from the external `agri\_profile.toml` file via `Config::loader().without\_env().load\_str()`, confirming that the entire domain injection pipeline operates without any hard-coded domain logic. The TOML parse adds approximately 1--12~ms to initialization, which is negligible compared with the overall end-to-end latency budget (<100~ms). The retrieval benchmark evaluates the resulting configured pipeline; the 210 queries cover all ten crops defined in the preset, and the knowledge base (`agricultural\_diseases.jsonl` plus `extended\_diseases.jsonl`) is accessed via the same `devkit\_query` tool that would be used in a production TOML-driven deployment.
+The integration tests verify the domain injection pipeline through two complementary paths. Early iterations programmatically constructed the agriculture profile by calling `DomainConfig::agriculture()` to ensure deterministic, CI-reproducible behavior without file-system dependencies. The final TOML-driven path loads the profile from the external `agri\_profile.toml` file via `Config::loader().without\_env().load\_str()`, adding approximately 1--12~ms to initialization. Both paths are exercised in the test suite, confirming that the domain logic can be injected either programmatically or declaratively. The retrieval benchmark evaluates the configured pipeline; the 210 queries cover all ten crops defined in the preset, and the knowledge base (`agricultural\_diseases.jsonl` plus `extended\_diseases.jsonl`) is accessed via the same `devkit\_query` tool that would be used in a production TOML-driven deployment.
 
 \subsection{MCP Integration and Transport Mechanics}
 
@@ -315,11 +315,13 @@ Query Execution (SQLite retrieval + scoring)         & $\sim$4 \\
 \end{tabular}
 \end{table}
 
-The 10\% to 100\% accuracy gap between Baseline-Random and the proposed system underscores the critical importance of injecting structured domain context at runtime. More significantly, the proposed architecture achieves this improvement without retraining models, rewriting agent orchestration logic, or hard-coding crop-specific rules. Instead, the performance gain is realized entirely through declarative configuration---a result that directly supports the Domain-as-Config hypothesis advanced in this study.
+It is important to note that Baseline-CropOnly already achieves a perfect 100.00\% Hit@3 because each crop in the 30-record knowledge base is represented by exactly three diseases; simple crop filtering therefore isolates the correct subset every time. The contribution of the proposed method lies not in improving Hit@3 over this strong minimal baseline, but in raising Hit@1 from 33.33\% to 100.00\% and achieving 99.52\% KeywordRecall@1 through symptom-level scoring. This demonstrates that declarative configuration can deliver precise top-1 ranking without retraining models, rewriting orchestration logic, or hard-coding crop-specific rules---a result that supports the Domain-as-Config hypothesis advanced in this study, while also underscoring that the current benchmark's small, balanced knowledge base makes crop filtering alone a surprisingly effective lower bound.
 
 \subsection{Proxy Evaluation of Retrieval-Augmented Generation Quality}
 
-While the current prototype does not yet execute full LLM text generation (the TUI completion endpoint remains a simulation stub), we can evaluate a conservative \textit{proxy} for retrieval-augmented generation (RAG) quality. The proxy rests on the following assumption: if the top-1 retrieved record contains (a) the ground-truth disease name and (b) the expected treatment keywords, then a downstream LLM with sufficient instruction-following capability has the necessary grounded context to generate a correct and actionable answer. This proxy is empirically motivated by the high retrieval scores reported in Table~\ref{tab:retrieval_results}.
+\textbf{Important disclaimer:} The current prototype does not execute full LLM text generation (the TUI completion endpoint remains a simulation stub). Consequently, the figures in Table~\ref{tab:generation_proxy} are \textit{simulated proxy values} derived from published agricultural QA benchmark reports and from the assumption that perfect retrieval context leads to high generation quality. \textbf{No actual LLM was evaluated in this study.}
+
+The proxy rests on the following assumption: if the top-1 retrieved record contains (a) the ground-truth disease name and (b) the expected treatment keywords, then a downstream LLM with sufficient instruction-following capability has the necessary grounded context to generate a correct and actionable answer. This proxy is empirically motivated by the high retrieval scores reported in Table~\ref{tab:retrieval_results}, but it remains a theoretical projection rather than a measured result.
 
 We simulate three model baselines on the 210-query benchmark:
 
@@ -329,7 +331,7 @@ We simulate three model baselines on the 210-query benchmark:
 
 \textbf{Proposed} -- the Domain-as-Config pipeline with perfect crop filtering and symptom-scored ranking.
 
-Table~\ref{tab:generation_proxy} reports proxy scores for \textit{diagnosis correctness}, \textit{treatment completeness}, and \textit{safety adequacy} (i.e., whether harmful or inappropriate recommendations are likely given the retrieved context). The scores for Baseline-A and Baseline-B are informed by published evaluations on agricultural QA benchmarks (AgriBench, AI-AgriBench, AgMMU), which consistently report that general LLMs achieve 35--45\% diagnostic accuracy on fine-grained agricultural symptoms, while crop-filtered but unranked retrieval improves this to roughly 70--80\% \cite{agmmu2025,anshankul2024}. The proposed pipeline, by contrast, proxies at 98\% diagnosis correctness and 95\% treatment completeness because the retrieved context is almost always the exact ground-truth record.
+Table~\ref{tab:generation_proxy} reports \textit{projected} proxy scores for \textit{diagnosis correctness}, \textit{treatment completeness}, and \textit{safety adequacy}. The Baseline-A and Baseline-B scores are informed by published evaluations on agricultural QA benchmarks (AgriBench, AI-AgriBench, AgMMU), which report that general LLMs achieve 35--45\% diagnostic accuracy on fine-grained agricultural symptoms, while crop-filtered but unranked retrieval improves this to roughly 70--80\% \cite{agmmu2025,anshankul2024}. The Proposed scores (0.98, 0.95, 0.88) are theoretical upper bounds inferred from the retrieval accuracy in Table~\ref{tab:retrieval_results}, not from a live generative model.
 
 \begin{table}[htbp]
 \centering
@@ -350,7 +352,13 @@ These proxy figures underscore that the value of the proposed architecture lies 
 
 \subsection{Limitations}
 
-While the results are encouraging, several limitations must be acknowledged. First, the current knowledge base contains 30 seed records. Although the 210 synthetic question variants provide a structured stress test for retrieval and keyword matching, the absolute size of the KB remains modest compared with industrial agricultural databases. Second, the benchmark evaluates architecture-level retrieval accuracy and configuration portability rather than the training of a new deep-learning model. Consequently, we do not report vision-based classification metrics or large-scale farmer-satisfaction scores. Third, the symptom descriptions and treatment recommendations were manually curated from well-known extension facts; future work should integrate automated knowledge-base expansion from public IPM guides and evaluate generalization to unseen crops and diseases.
+While the results are encouraging, several limitations must be acknowledged. First, the current knowledge base contains only 30 seed records, expanded to 210 question variants through seven fixed templates. The resulting queries are surface paraphrases of the same underlying facts; they are useful for architecture-level retrieval validation, but they do \textit{not} constitute a generalization test for unseen agricultural knowledge or real-world farmer utterances.
+
+Second, the benchmark design---in which each crop is represented by exactly three diseases---means that Baseline-CropOnly attains a perfect Hit@3 by simple filtering alone. The proposed method's value lies in improving Hit@1 and KeywordRecall@1, not in raising Hit@3 over this minimal baseline. Future work should evaluate the system on larger, imbalanced knowledge bases where crop filtering is no longer sufficient.
+
+Third, the experiments reported here validate retrieval accuracy and configuration portability through Rust integration tests. \textbf{No live LLM was invoked.} The proxy generation scores in Table~\ref{tab:generation_proxy} are theoretical projections, not measured outputs. End-to-end conversational accuracy, hallucination rates, and safety of generated advice remain to be evaluated once the TUI generation stub is replaced with a real local LLM backend.
+
+Fourth, we do not report vision-based classification metrics or large-scale farmer-satisfaction scores. Finally, the symptom descriptions and treatment recommendations were manually curated from well-known extension facts; future work should integrate automated knowledge-base expansion from public IPM guides and evaluate generalization to unseen crops and diseases.
 
 \section{Discussion}
 \label{sec:discussion}
@@ -359,7 +367,7 @@ The experimental results presented in Section~\ref{sec:experiments} support the 
 
 \subsection{Implications for Agricultural Software Architecture}
 
-The 10\% to 100\% accuracy gap between Baseline-Random and the proposed system is not merely a retrieval improvement; it is an architectural statement. Baseline-Random simulates an agent that has no access to structured agricultural context---a scenario analogous to deploying a general-purpose cloud LLM in a region with poor connectivity and no local knowledge base. The proposed system, by contrast, demonstrates that injecting a lightweight `DomainConfig` at runtime is sufficient to elevate diagnostic retrieval to perfect accuracy on structured symptoms, while keeping latency below 20~ms. This performance profile suggests that local-first, configuration-driven agents are technically viable for real-time field advisory use, even on modest edge hardware.
+Baseline-Random simulates an agent that has no access to structured agricultural context---a scenario analogous to deploying a general-purpose cloud LLM in a region with poor connectivity and no local knowledge base. The proposed system demonstrates that injecting a lightweight `DomainConfig` at runtime can elevate diagnostic retrieval to perfect top-1 accuracy on structured symptoms, while keeping latency below 20~ms. It is worth emphasizing that Baseline-CropOnly---which uses only the crop name---already achieves 100\% Hit@3 on this small, balanced knowledge base; the proposed method's added value is the precise top-1 ranking (100\% Hit@1) and near-perfect keyword recall (99.52\%) obtained through symptom-level scoring. This performance profile suggests that local-first, configuration-driven agents are technically viable for real-time field advisory use, even on modest edge hardware, provided the knowledge base is well-structured.
 
 More importantly, the sub-50~ms configuration migration time quantifies the horizontal adaptability of the Domain-as-Config paradigm. Repurposing the agent for a new crop or region reduces to editing a TOML file---a task that can be performed by domain experts or extension officers without software engineering support. This stands in sharp contrast to ontology-based expert systems, which require weeks of knowledge-engineering work to encode new crop taxonomies and SWRL rules, or to vision-based pipelines, which demand large labeled datasets and GPU training cycles for each new disease category.
 
@@ -523,35 +531,38 @@ David Samuel, Rajesh Kumar, and Anil Patel.
 \newblock {\em AgriEngineering}, 7(1):112--128, 2025.
 
 \bibitem{agrarian2025}
-AGRARIAN Team.
-\newblock {\em A Self-Organizing Cyber-Physical System for Sustainable
-  Agriculture}, volume 14500 of {\em Lecture Notes in Computer Science}.
-\newblock Springer, 2025.
+Multiple Authors.
+\newblock {AGRARIAN}: A self-organizing cyber-physical system for sustainable
+  agriculture.
+\newblock {\em Discover Internet of Things}, 2025.
+\newblock Springer Nature, doi:10.1007/s43926-025-00205-6.
 
 \bibitem{chatdemeter2025}
-Frontiers~Research Team.
+Sainan Zhang et~al.
 \newblock {Chat Demeter}: A multi-agent system for plant disease diagnosis
   integrating {CNN}--transformer models.
-\newblock {\em Frontiers in Plant Science}, 16:1456789, 2025.
+\newblock {\em Frontiers in Plant Science}, 16:1695227, 2025.
 
 \bibitem{iotmcp2025}
-IoT-MCP Team.
+Ningyuan Yang et~al.
 \newblock {IoT-MCP}: Bridging large language models and {IoT} systems through
   the model context protocol.
-\newblock Preprint, 2025.
+\newblock arXiv preprint arXiv:2510.01260, 2025.
 
 \bibitem{kgllm2024}
-Research Team.
+Jingchi Jiang, Lian Yan, Jie Liu, et~al.
 \newblock Agricultural large language model based on precise knowledge
   retrieval and knowledge collaborative generation.
-\newblock {\em Smart Agriculture}, 6(2):45--58, 2024.
+\newblock {\em Smart Agriculture}, 7(1):45--58, 2025.
+\newblock In Chinese.
 
 \bibitem{agenticgraphrag2025}
-Shanghai Ocean~University Team.
+Multiple Authors.
 \newblock An agentic graph {RAG} expert system for rice pest and disease
   diagnosis.
 \newblock {\em Transactions of the Chinese Society of Agricultural
   Engineering}, 41(3):1--10, 2025.
+\newblock In Chinese.
 \newblock In Chinese.
 
 \bibitem{wang2024shennong}
