@@ -1,11 +1,16 @@
-# Ollama 就绪后操作清单（agri-paper）
+# 本地 LLM 就绪后操作清单（agri-paper）
 
-**当前状态：** Ollama 未安装，阻塞 agri-paper 的 LLM 评估和知识库扩展。
-**本清单目标：** 一旦 Ollama 安装完成，按顺序执行以下步骤即可推进项目。
+**当前状态：** 本地量化模型尚未下载运行，阻塞 agri-paper 的 LLM 评估和知识库扩展。  
+**本清单目标：** 一旦本地模型就绪，按顺序执行以下步骤即可推进项目。  
+**支持两条路径：**
+- **Path A: Ollama** — 传统方案，服务化 REST API。
+- **Path B: kalosm (Rust-native)** — 纯 Rust 方案，基于 Candle，无需额外守护进程。
 
 ---
 
-## Step 1：安装并验证 Ollama（约 10 分钟）
+## Step 1：安装并验证本地模型（约 10–30 分钟）
+
+### Path A — Ollama
 
 ```powershell
 # 1. 下载安装
@@ -22,6 +27,22 @@ ollama list
 ollama run qwen2.5:7b "Say hello"
 ```
 
+### Path B — kalosm（纯 Rust，已验证编译）
+
+```powershell
+cd C:\Users\22414\Desktop\agri-paper\tools\rust_llm_poc
+
+# 1. 编译（已验证通过）
+cargo check
+
+# 2. 首次运行会自动从 HuggingFace 下载 bartowski/Qwen2.5-7B-Instruct-GGUF
+cargo run
+
+# 成功后应看到模型对农业病害问题的文本生成输出
+```
+
+> **注意：** Path B 首次 `cargo run` 需要从 HuggingFace 下载约 4–5 GB 的 GGUF 文件。若网络不稳定，可手动下载 `.gguf` 文件并通过 `LlamaSource::new(FileSource::local("..."))` 改为本地路径加载。
+
 ---
 
 ## Step 2：运行真实 LLM 生成评估（约 30–60 分钟）
@@ -34,7 +55,7 @@ python w4\research\run_llm_eval.py
 ```
 
 **脚本会自动做：**
-- 检查 Ollama 可用性和模型存在性
+- 检查 Ollama 可用性和模型存在性（若使用 Path B，需先自行确保 `kalosm` 可运行，再适配脚本中的客户端调用）
 - 从 210 条 benchmark 中 stratified 采样 80 条（easy 30 + medium 30 + hard 20）
 - 对每条查询在 3 种检索条件下分别调用本地 LLM：
   - Baseline-A：无检索上下文
@@ -57,7 +78,7 @@ python w4\research\run_llm_eval.py
 
 **需要修改的位置：**
 1. 在 "Proxy Evaluation" 小节前添加一段过渡：
-   > "To validate the simulated projections reported above, we conducted a real local-LLM evaluation using Ollama with Qwen2.5-7B..."
+   > "To validate the simulated projections reported above, we conducted a real local-LLM evaluation using Qwen2.5-7B..."
 2. 新增一个表格 `tab:llm_eval_results`，展示 Baseline-A / Baseline-B / Proposed 的实测均值。
 3. 在 Limitations 中移除或弱化 "no live LLM was invoked" 的表述，改为说明本地模型的局限性（量化、7B 规模、无多模态）。
 
@@ -127,7 +148,7 @@ zip arxiv_upload.zip main_arxiv.tex *.tex *.bib
 
 | 阻塞项 | 影响 | 解除后最大收益 |
 |--------|------|----------------|
-| Ollama 安装 | 高 | Step 2（LLM 评估）和 Step 4.1（PDF 结构化）同时解锁 |
+| 本地模型下载运行 | 高 | Step 2（LLM 评估）和 Step 4.1（PDF 结构化）同时解锁 |
 | AI-AgriBench 数据获批 | 中 | Step 4.2 解锁，知识库规模大幅提升 |
 | GitHub SSL 修复 | 低-中 | 方便自动化下载公开数据集和工具 |
 

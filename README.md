@@ -1,5 +1,8 @@
 # agri-paper
 
+![Status](https://img.shields.io/badge/status-research%20prototype-orange)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
 A research prototype exploring a **local-first, configuration-driven agent architecture for agricultural knowledge management**.
 
 > ⚠️ **This repository is under active audit and refactoring.** Please read [`PROJECT_STATUS.md`](PROJECT_STATUS.md) before examining earlier commits or using any materials for academic purposes.
@@ -8,13 +11,14 @@ A research prototype exploring a **local-first, configuration-driven agent archi
 
 ## Overview
 
-The project investigates whether a generic Rust agent framework (Clarity) can be adapted to agricultural pest and disease diagnosis through external configuration files (the "Domain-as-Config" paradigm), using the Model Context Protocol (MCP) to communicate with a local knowledge-base backend (devbase).
+The project investigates whether a generic Rust agent framework (**Clarity**) can be adapted to agricultural pest and disease diagnosis through external configuration files (the "Domain-as-Config" paradigm), using the Model Context Protocol (**MCP**) to communicate with a local knowledge-base backend (**devbase**).
 
 Key components:
 - **LaTeX paper sources** in `w4/arxiv/` and `w4/writer/`
 - **Agricultural QA benchmark** in `datasets/` (210 templated questions derived from 30 seed records)
 - **Knowledge base** in `w3/engineer/agri_knowledge_base/` (30 crop-disease records)
 - **Research plans** in `w4/research/` for LLM evaluation and knowledge-base expansion
+- **Rust-native LLM PoC** in `tools/rust_llm_poc/` (local inference via [`kalosm`](https://github.com/floneum/floneum) + Candle)
 
 ---
 
@@ -23,6 +27,7 @@ Key components:
 ```
 agri-paper/
 ├── datasets/              # Agricultural QA benchmark and generation scripts
+├── tools/                 # Rust-native local-LLM inference PoC
 ├── w1/                    # Early-phase artifacts (literature matrix, outline)
 ├── w3/                    # Mid-phase artifacts (CNKI research, knowledge base, demo)
 ├── w4/
@@ -31,7 +36,8 @@ agri-paper/
 │   ├── research/          # Experiment plans and evaluation scripts
 │   └── engineer/          # Validation results and metrics
 ├── PHASE_REPORT_2026-04-15.md   # Latest audit and status report
-└── PROJECT_STATUS.md      # Important notice on project maturity
+├── LOCAL_LLM_CHECKLIST.md       # Step-by-step guide to run local model evals
+└── PROJECT_STATUS.md            # Important notice on project maturity
 ```
 
 ---
@@ -40,10 +46,27 @@ agri-paper/
 
 - The knowledge base is small (30 seed records).
 - The 210 QA pairs are **template-generated surface paraphrases**, not independent samples.
-- **No live LLM has been evaluated** in the reported experiments.
+- **No live LLM evaluation has been executed yet.** The retrieval and latency experiments are integration tests that bypass the generation layer.
+  - *Update:* A Rust-native inference path (`kalosm` → `Qwen2.5-7B-Instruct-GGUF`) has been verified to compile; the next step is downloading the quantized model and running the 80-record stratified benchmark.
 - The retrieval benchmark uses programmatic profile construction for CI reproducibility, not yet a pure TOML-loaded end-to-end test.
 
 See `PROJECT_STATUS.md` and `PHASE_REPORT_2026-04-15.md` for full details.
+
+---
+
+## Quickstart (for developers)
+
+```bash
+# 1. Browse the benchmark
+cat datasets/agricultural_diseases_all.jsonl | head -n 3
+
+# 2. Inspect the evaluation plan
+cat w4/research/llm_eval_plan.md
+
+# 3. Check the Rust-native LLM PoC
+cd tools/rust_llm_poc
+cargo check        # kalosm compiles; next: cargo run to download model
+```
 
 ---
 

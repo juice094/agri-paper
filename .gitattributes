@@ -1,0 +1,6 @@
+# Mark LaTeX and BibTeX sources as documentation for GitHub linguist
+# so that Python / Rust / JSON show up in the language bar.
+*.tex linguist-documentation
+*.bib linguist-documentation
+*.cls linguist-documentation
+*.sty linguist-documentation

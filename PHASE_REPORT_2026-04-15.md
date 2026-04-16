@@ -16,8 +16,8 @@
   - 实验目标（80 条 stratified 采样，三种条件对比）
   - 推荐模型（Qwen2.5-7B-Instruct Q4_K_M）
   - Prompt 设计、批量生成流程、评分方案（规则匹配 + LLM-as-Judge）
-  - 明确的当前阻塞项：**Ollama 未安装**
-- 方案已定位到具体可执行步骤，一旦 Ollama 就绪即可转化为 `run_llm_eval.py` 并运行。
+  - 明确的当前阻塞项：**本地模型未下载运行**
+- 方案已定位到具体可执行步骤，一旦本地模型就绪即可转化为 `run_llm_eval.py` 并运行。
 
 ### 1.3 知识库规模扩大方案准备
 - 编写 `w4/research/kb_expansion_plan.md`，包含：
@@ -27,17 +27,26 @@
 
 ---
 
-## 2. 当前阻塞项
+## 2. 晚间更新（kalosm 路径解锁）
 
-| # | 阻塞项 | 影响 | 解除条件 |
-|---|--------|------|----------|
-| 1 | **Ollama 未安装** | 高 | 用户/其他 Agent 下载安装 Ollama for Windows 并执行 `ollama pull qwen2.5:7b` |
-| 2 | **AI-AgriBench 数据需申请** | 中 | 填写 [aiagribench.org](https://aiagribench.org) 官网表单获取测试集 JSON |
-| 3 | **GitHub SSL 证书验证失败** | 中 | 配置系统证书或换用 git/代理方式访问 GitHub |
+- 在 `tools/rust_llm_poc/` 中完成了基于 `kalosm 0.4`（Candle 后端）的纯 Rust 本地 LLM 推理 PoC。
+- **编译已验证通过**：修正了 `Cargo.toml` 中缺失的 `language` feature 以及 `LlamaSource::qwen_2_5_7b_instruct()` 方法名。
+- 这意味着 agri-paper **不再唯一依赖 Ollama**；若 Ollama 安装困难，可直接使用 `kalosm` 加载 HuggingFace 上的 GGUF 量化模型运行评估。
+- 当前阻塞因此从"缺少 Ollama"收窄为"需要下载并运行本地量化模型（约 4–5 GB）"。
 
 ---
 
-## 3. 格雷许可与当前策略
+## 3. 当前阻塞项
+
+| # | 阻塞项 | 影响 | 解除条件 |
+|---|--------|------|----------|
+| 1 | **本地量化模型未下载/运行** | 高 | 下载 Qwen2.5-7B-Instruct-GGUF（通过 `kalosm` 自动拉取或手动放置）并执行 `cargo run` / `python w4/research/run_llm_eval.py` |
+| 2 | **AI-AgriBench 数据需申请** | 中 | 填写 [aiagribench.org](https://aiagribench.org) 官网表单获取测试集 JSON |
+| 3 | **GitHub SSL 证书验证失败** | 低-中 | 配置系统证书或换用 git/代理方式访问 GitHub |
+
+---
+
+## 4. 格雷许可与当前策略
 
 根据 `格雷向Kimicli的转述1.txt` 中的工程评估：
 
@@ -45,28 +54,33 @@
 |------|----------|----------|
 | 投稿 SCI/SSCI 期刊 | 🔴 禁止 | 不执行 |
 | 上传 arXiv 预印本 | 🟡 谨慎许可 | 暂不执行（需先补充 LLM 实验才能诚实标注） |
-| 补充真实 LLM 评估 | ✅ 允许 | **方案已就绪，阻塞于 Ollama** |
-| 扩大知识库规模 | ✅ 允许并行 | **方案已就绪，阻塞于 Ollama 和数据申请** |
+| 补充真实 LLM 评估 | ✅ 允许 | **方案已就绪，两条技术路径（Ollama / kalosm）均已打通，待下载模型** |
+| 扩大知识库规模 | ✅ 允许并行 | **方案已就绪，阻塞于本地模型和 AI-AgriBench 数据申请** |
 | 今晚大规模推进 | 🔴 优先级最低 | 仅完成准备文档和交叉风险清理，不做代码/数据大改 |
 
 ---
 
-## 4. 下一步建议（按优先级）
+## 5. 下一步建议（按优先级）
 
 ### P0（解锁所有后续工作）
-1. **安装 Ollama**
+1. **运行本地模型**
    ```powershell
+   # 路径 A：Ollama
    # 从 https://ollama.com/download/windows 下载安装
    ollama pull qwen2.5:7b
+
+   # 路径 B：kalosm（纯 Rust，已验证编译）
+   cd C:\Users\22414\Desktop\agri-paper\tools\rust_llm_poc
+   cargo run   # 首次运行会自动从 HuggingFace 下载模型
    ```
 
 ### P1（agri-paper 窗口的下一步动作）
 2. **实现并运行 `run_llm_eval.py`**
-   - 在 Ollama 就绪后，根据 `llm_eval_plan.md` 编写完整脚本。
+   - 在本地模型就绪后，根据 `llm_eval_plan.md` 编写完整脚本。
    - 生成 `w4/research/llm_eval_results.json` 和评估报告。
 
 3. **爬取 USDA IPM Crop Profiles**
-   - 在 Ollama 就绪后，根据 `kb_expansion_plan.md` 编写 `ipm_crawler.py`。
+   - 在本地模型就绪后，根据 `kb_expansion_plan.md` 编写 `ipm_crawler.py`。
    - 使用本地 Qwen2.5-7B 将 PDF 文本结构化为 JSONL。
 
 ### P2（辅助动作）
@@ -78,13 +92,14 @@
 
 ---
 
-## 5. 可交付物状态
+## 6. 可交付物状态
 
 | 文件 | 状态 | 说明 |
 |------|------|------|
 | `w4/research/llm_eval_plan.md` | ✅ 已完成 | LLM 评估完整实验方案 |
 | `w4/research/kb_expansion_plan.md` | ✅ 已完成 | 知识库扩展完整方案 |
-| `PHASE_REPORT_2026-04-15.md` | ✅ 已完成 | 本阶段报告 |
+| `PHASE_REPORT_2026-04-15.md` | ✅ 已完成 | 本阶段报告（含晚间 kalosm 更新） |
+| `tools/rust_llm_poc/` | ✅ 编译通过 | Rust-native 本地推理 PoC |
 | devbase 注册表路径 | ✅ 已修复 | `agri-paper` 改为绝对路径，`agri_knowledge_base` 重复条目已删除 |
 
 ---

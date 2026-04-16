@@ -14,9 +14,11 @@ This repository contains a **research prototype** for a local-first, configurati
   - Erroneous citation metadata (including a suspected fabricated DOI/volume for `agrarian2025`) was corrected.
   - The proxy evaluation table in `experiments.tex` was explicitly labeled as **simulated / no actual LLM invoked**.
   - A dangling Git submodule was removed and the knowledge-base structure was normalized.
+- **Rust-native local inference path verified:** `tools/rust_llm_poc/` compiles successfully against `kalosm 0.4` (Candle backend). This provides an alternative to Ollama for running the Qwen2.5-7B evaluation.
 
 ### What remains incomplete
 - **No real LLM evaluation has been performed.** All retrieval and latency experiments are integration tests that bypass the LLM generation layer.
+  - *The evaluation script (`w4/research/run_llm_eval.py`) and the Rust PoC (`tools/rust_llm_poc/`) are both ready; the only remaining blocker is downloading the quantized model and executing the 80-record stratified benchmark.*
 - **The knowledge base remains small:** 30 seed records expanded to 210 templated QA pairs. This is sufficient for architecture-level prototyping but not for generalization claims.
 - **The TOML-driven configuration has not yet been validated end-to-end in the retrieval benchmark.** The benchmark tests still construct the agriculture profile programmatically for CI reproducibility.
 
@@ -26,7 +28,7 @@ This repository contains a **research prototype** for a local-first, configurati
 - External reviewers or employers examining this repository should read `PHASE_REPORT_2026-04-15.md` and the present file before drawing conclusions about earlier commits.
 
 ### Next steps (blocked on local environment)
-1. Install Ollama and run local LLM generation experiments (`w4/research/llm_eval_plan.md`).
+1. Download and run a local quantized model (Qwen2.5-7B-Instruct Q4_K_M) via either **Ollama** or the **Rust `kalosm` PoC**, then execute the 80-record stratified evaluation (`w4/research/llm_eval_plan.md` + `LOCAL_LLM_CHECKLIST.md`).
 2. Scale the knowledge base to 500+ records via public datasets (`w4/research/kb_expansion_plan.md`).
 3. Re-compile the arXiv PDF from the corrected sources.
 

@@ -1,0 +1,19 @@
+[package]
+name = "rust_llm_poc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Primary path: Kalosm (high-level Rust LLM interface built on Candle)
+kalosm = { version = "0.4", features = ["language"] }
+
+# Fallback raw Candle components if Kalosm API is insufficient
+# candle-core = "0.10"
+# candle-transformers = "0.10"
+# tokenizers = "0.21"
+
+anyhow = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+
+[workspace]
+
