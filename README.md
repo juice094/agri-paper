@@ -54,6 +54,14 @@ See `PROJECT_STATUS.md` and `PHASE_REPORT_2026-04-15.md` for full details.
 
 ---
 
+## Why this project matters
+
+> **agri-paper 的优势不是"模型更聪明"，而是"让聪明的通用模型，通过架构设计（配置 + 检索 + Rust 本地引擎），变成农民可以离线使用的、数据可控的、领域可迁移的专家系统。"**
+
+在农业等数据敏感、网络条件差的场景下，"本地优先"不仅是技术偏好，更是基础设施刚需。本项目探索的 **Domain-as-Config** 范式表明：你不需要重新训练一个农业大模型，只需要把领域知识整理成结构化配置，就能让通用本地 LLM 在离线的环境下提供专业、可解释的农业建议。
+
+---
+
 ## Quickstart (for developers)
 
 ```bash
