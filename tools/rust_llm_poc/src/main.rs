@@ -5,11 +5,15 @@ async fn main() -> anyhow::Result<()> {
     println!("============================================");
     println!("  agri-paper | Agricultural LLM REPL");
     println!("============================================");
-    println!("Loading Qwen2.5-7B-Instruct via kalosm...");
-    println!("(First run may download ~4.5 GB from HuggingFace)\n");
+    println!("Loading local Qwen2.5-14B-Instruct-GGUF via kalosm...");
+    println!("Model path: C:\\Users\\22414\\Desktop\\model\\Qwen2.5-14B-Instruct.Q4_K_M.gguf\n");
+
+    let source = LlamaSource::new(FileSource::local(
+        "C:\\Users\\22414\\Desktop\\model\\Qwen2.5-14B-Instruct.Q4_K_M.gguf".into(),
+    ));
 
     let model = Llama::builder()
-        .with_source(LlamaSource::qwen_2_5_7b_instruct())
+        .with_source(source)
         .build()
         .await?;
 
