@@ -28,6 +28,9 @@
 | B2 | Implementation of LLMs and Agricultural KGs for Efficient Plant Disease Detection | Zhao et al. | 2024 | *Agriculture* | 验证 KG 在提升 LLM 事实准确性与领域相关性方面的有效性。 |
 | B3 | Agricultural LLM Based on Precise Knowledge Retrieval and Knowledge Collaborative Generation (KGLLM) | Research Team | 2024 | *Smart Agriculture* | 信息熵过滤 + KG 显式约束解码，BertScore 平均提升 **9.84%**，显著降低幻觉。 |
 | B4 | AgriGPT: A Large Language Model Ecosystem for Agriculture | Yang et al. | 2025 | arXiv:2508.08632 | **首个开源农业 LLM 生态**：Agri-342K 数据集、Tri-RAG、AgriBench-13K 评测基准。 |
+| B4b | CPJ: Explainable Agricultural Pest Diagnosis via Caption-Prompt-Judge | Zhang et al. | 2025 | arXiv:2512.24947 | **训练无关的 LLM-as-a-Judge 评估流水线**：5 维度评分、Cohen's κ=0.88 人工验证协议。已注册到 devbase (`cpj_ref`)。 |
+| B4c | Agri-CM³: A Chinese Massive Multi-modal, Multi-level Benchmark | Wang et al. | 2025 | ACL 2025 | **P-M-K 三级分层评估**：3,939 图像 + 15,901 MCQ，感知-认知-知识拆解。已注册到 devbase (`agricm3_ref`)。 |
+| B4d | AgMMU: A Comprehensive Agricultural Multimodal Understanding Benchmark | Gauba et al. | 2025 | arXiv:2504.10568 | **真实对话蒸馏**：11.6 万 USDA 专家对话 → 746 MCQ/OEQ + 5.7 万知识事实。已注册到 devbase (`agmmu_ref`)。 |
 | B5 | AgroLLM: Connecting Farmers and Agricultural Practices Through LLMs | Samuel et al. | 2025/26 | *AgriEngineering* | **RAG + DKPL**：从教材自动提取语义词汇、因果规则与约束库，准确率 **95.2%**。 |
 | B6 | AgriBERT: Knowledge-Infused Agricultural Language Models | Rezayi et al. | 2022 | *IJCAI* | 农业领域语言模型先驱，通过领域语料预训练提升农业文本理解。 |
 | B7 | The Role of Large Language Models in Modern Agriculture: A Review | (Various) | 2024 | *Agronomy* | 综述 LLM 在农业决策支持、知识问答、作物管理中的应用现状与挑战。 |
@@ -67,6 +70,9 @@
 | **AgenticGraphRAG** | 2025 | ⭐⭐⭐☆☆ 中 | ⭐⭐☆☆☆ 低 | ⭐⭐☆☆☆ 低 | 水稻症状数据集 / 86-89% | Prompt、检索模块围绕水稻硬编码 |
 | **Chat Demeter** | 2025 | ⭐⭐☆☆☆ 低 | ⭐⭐⭐☆☆ 中 | ⭐⭐☆☆☆ 低 | 植物叶片图像 / 99.5% | CNN-Transformer 与 Agent 流程高度定制 |
 | **AgriGPT + Tri-RAG** | 2025 | ⭐⭐⭐⭐☆ 较高 | ⭐⭐☆☆☆ 低 | ⭐⭐⭐☆☆ 中 | AgriBench-13K / 开源 | 核心模型与 RAG 流水线仍需大量领域工程 |
+| **CPJ** | 2025 | ⭐⭐⭐☆☆ 中 | ⭐⭐⭐⭐☆ 高* | ⭐⭐⭐⭐☆ 较高 | CDDMBench / 开源 | *训练无关，评估协议可直接本地化复用 |
+| **Agri-CM³** | 2025 | ⭐⭐⭐⭐☆ 较高 | ⭐⭐⭐☆☆ 中 | ⭐⭐⭐☆☆ 中 | 15,901 MCQ / 开源 | 中文为主，P-M-K 分层框架具有通用借鉴价值 |
+| **AgMMU** | 2025 | ⭐⭐⭐⭐☆ 较高 | ⭐⭐☆☆☆ 低 | ⭐⭐⭐☆☆ 中 | 746 QA + 57K facts / 开源 | 数据蒸馏方法对 USDA IPM 扩展有直接参考意义 |
 | **AgroLLM (RAG+DKPL)** | 2025 | ⭐⭐⭐☆☆ 中 | ⭐⭐⭐☆☆ 中 | ⭐⭐⭐⭐☆ 较高 | 农业教材 / 95.2% | DKPL 约束提取器与教材结构强耦合 |
 | **IoT-MCP / IoT-Edge-MCP** | 2025 | ⭐⭐⭐⭐⭐ 高 | ⭐⭐⭐⭐☆ 高 | ⭐⭐⭐⭐⭐ 高 | 工业/边缘场景 | 农业垂直领域的工具注册规范仍空白 |
 | **AGRARIAN (K3s+GitOps)** | 2025 | ⭐⭐⭐⭐☆ 较高 | ⭐⭐⭐⭐⭐ 很高 | ⭐⭐⭐⭐⭐ 高 | 农业 CPS | 农艺模型仍需单独开发容器镜像 |
@@ -104,6 +110,9 @@
 |------|----------|------------------|
 | AgenticGraphRAG (A3) | ReAct + 双检索（向量+图谱） | 农业诊断 Agent 的推理模式设计参考 |
 | AgroLLM (B5) | 领域约束 RAG（DKPL） | 配置文件中 `domain.constraints` 字段的设计灵感 |
+| **CPJ (B4b)** | LLM-as-a-Judge 5 维度评分 | `eval.rs` 评分维度从 3 维扩展为 5 维的直接依据 |
+| **Agri-CM³ (B4c)** | P-M-K 三级分层评估 | 将单一 benchmark 升级为分层推理测试的设计依据 |
+| **AgMMU (B4d)** | USDA 真实对话蒸馏 | `kb_expansion_plan.md` 中 USDA IPM 扩展的数据构造参考 |
 | IoT-MCP (C1) | 三层 MCP 架构 | 本文 Clarity→devbase→syncthing/git 三层架构的理论支撑 |
 | AGRARIAN (C3) | K3s + GitOps 声明式配置 | "配置即代码"在农业分布式环境中的可复现性论证 |
 | Groeneveld DSL (C4) | FMIS DSL 三层拆分 | Profile 配置中 `persona`/`tools`/`domain` 的分层设计参考 |

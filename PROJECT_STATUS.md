@@ -30,9 +30,10 @@ This repository contains a **research prototype** for a local-first, configurati
 - External reviewers or employers examining this repository should read `PHASE_REPORT_2026-04-15.md` and the present file before drawing conclusions about earlier commits.
 
 ### Next steps (blocked on local environment)
-1. Obtain a 7B quantized model (Qwen2.5-7B-Instruct Q4_K_M) — manual download is needed because automated HuggingFace downloads fail with a Windows SSL certificate revocation error. Then execute the 80-record stratified evaluation via `cargo run --bin eval` in `tools/rust_llm_poc/`.
-2. Scale the knowledge base to 500+ records via public datasets (`w4/research/kb_expansion_plan.md`).
-3. Re-compile the arXiv PDF from the corrected sources.
+1. **Obtain a 7B quantized model** (Qwen2.5-7B-Instruct Q4_K_M) — manual download is needed because automated HuggingFace downloads fail with a Windows SSL certificate revocation error. Then execute the 80-record stratified evaluation via `cargo run --bin eval` in `tools/rust_llm_poc/`.
+2. **Integrate upgraded evaluation methodology** borrowed from competitor codebases: CPJ's 5-dimensional scoring and Agri-CM³'s P-M-K reasoning-level stratification. See the detailed plan in [`w4/research/MATURE_ROADMAP_2026-04-17.md`](w4/research/MATURE_ROADMAP_2026-04-17.md).
+3. Scale the knowledge base to 500+ records via public datasets (`w4/research/kb_expansion_plan.md`), guided by AgMMU's real-dialogue distillation approach.
+4. Re-compile the arXiv PDF from the corrected sources.
 
 ---
 
