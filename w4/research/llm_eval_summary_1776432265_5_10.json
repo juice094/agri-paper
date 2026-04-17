@@ -1,0 +1,29 @@
+{
+  "CropOnly": {
+    "count": 5,
+    "avg_plant": 1.0,
+    "avg_disease": 0.2,
+    "avg_symptom": 0.7119048,
+    "avg_format": 1.0,
+    "avg_completeness": 0.8,
+    "avg_total": 3.711905
+  },
+  "NoContext": {
+    "count": 5,
+    "avg_plant": 1.0,
+    "avg_disease": 0.2,
+    "avg_symptom": 0.5533334,
+    "avg_format": 1.0,
+    "avg_completeness": 1.0,
+    "avg_total": 3.7533336
+  },
+  "Proposed": {
+    "count": 5,
+    "avg_plant": 1.0,
+    "avg_disease": 0.2,
+    "avg_symptom": 0.78380954,
+    "avg_format": 1.0,
+    "avg_completeness": 0.8,
+    "avg_total": 3.7838097
+  }
+}
