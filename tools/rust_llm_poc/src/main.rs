@@ -28,7 +28,9 @@ async fn main() -> anyhow::Result<()> {
         std::io::Write::flush(&mut std::io::stdout())?;
 
         buffer.clear();
-        stdin.read_line(&mut buffer)?;
+        if stdin.read_line(&mut buffer)? == 0 {
+            break;
+        }
         let input = buffer.trim();
 
         if input.is_empty() {
