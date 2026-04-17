@@ -27,6 +27,16 @@ struct BenchmarkRecord {
 }
 
 #[derive(Debug, Clone, Serialize)]
+struct CpjScore {
+    plant_accuracy: f32,
+    disease_accuracy: f32,
+    symptom_accuracy: f32,
+    format_adherence: f32,
+    completeness: f32,
+    total: f32,
+}
+
+#[derive(Debug, Clone, Serialize)]
 struct EvalResult {
     id: String,
     condition: String, // NoContext | CropOnly | Proposed
@@ -35,6 +45,7 @@ struct EvalResult {
     context_disease: Option<String>,
     generated_answer: String,
     difficulty: String,
+    cpj_score: CpjScore,
 }
 
 fn model_path() -> PathBuf {
@@ -149,6 +160,56 @@ fn proposed(query: &str, kb: &[KbRecord]) -> Option<String> {
     ))
 }
 
+fn score_answer(answer: &str, rec: &BenchmarkRecord) -> CpjScore {
+    let a = answer.to_lowercase();
+    let plant_accuracy = if a.contains(&rec.crop.to_lowercase()) { 1.0 } else { 0.0 };
+    let disease_accuracy = if a.contains(&rec.expected_disease.to_lowercase()) { 1.0 } else { 0.0 };
+
+    let answer_tokens = tokenize(answer);
+    let symptom_tokens = tokenize(&rec.symptoms);
+    let symptom_accuracy = if symptom_tokens.is_empty() {
+        0.0
+    } else {
+        let hits = answer_tokens.intersection(&symptom_tokens).count() as f32;
+        (hits / symptom_tokens.len() as f32).min(1.0)
+    };
+
+    let has_diagnosis = a.contains("disease")
+        || a.contains("symptom")
+        || a.contains(&rec.expected_disease.to_lowercase());
+    let has_treatment = a.contains("treatment")
+        || a.contains("manage")
+        || a.contains("control")
+        || a.contains("spray")
+        || a.contains("fungicide")
+        || a.contains("insecticide")
+        || a.contains("apply");
+    let format_adherence = if has_diagnosis && has_treatment { 1.0 } else { 0.0 };
+
+    let words: Vec<_> = answer.split_whitespace().collect();
+    let specific_cues = [
+        "spray", "apply", "fungicide", "insecticide", "remove", "water", "fertilizer",
+        "rotate", "resistant", "irrigate", "prune", "mulch", "biological", "organic",
+    ];
+    let has_specific = specific_cues.iter().any(|c| a.contains(c));
+    let completeness = if words.len() >= 30 && has_specific { 1.0 } else { 0.0 };
+
+    let total = plant_accuracy
+        + disease_accuracy
+        + symptom_accuracy
+        + format_adherence
+        + completeness;
+
+    CpjScore {
+        plant_accuracy,
+        disease_accuracy,
+        symptom_accuracy,
+        format_adherence,
+        completeness,
+        total,
+    }
+}
+
 async fn generate(model: &Llama, system_prompt: &str, query: &str) -> anyhow::Result<String> {
     let mut chat = model
         .chat()
@@ -201,6 +262,9 @@ async fn main() -> anyhow::Result<()> {
     ));
     let mut out_file = std::io::BufWriter::new(std::fs::File::create(&out_path)?);
 
+    // Accumulate scores per condition for summary
+    let mut scores_by_condition: std::collections::HashMap<String, Vec<CpjScore>> = std::collections::HashMap::new();
+
     for (i, rec) in sampled.iter().enumerate() {
         for (cond_name, cond_fn) in &conditions {
             println!(
@@ -215,6 +279,12 @@ async fn main() -> anyhow::Result<()> {
             let context = cond_fn(&rec.query, &kb);
             let system_prompt = build_system_prompt(base_prompt, context.clone());
             let answer = generate(&model, &system_prompt, &rec.query).await?;
+            let cpj_score = score_answer(&answer, rec);
+
+            scores_by_condition
+                .entry(cond_name.to_string())
+                .or_default()
+                .push(cpj_score.clone());
 
             let result = EvalResult {
                 id: rec.id.clone(),
@@ -224,6 +294,7 @@ async fn main() -> anyhow::Result<()> {
                 context_disease: context.as_ref().and_then(|_| retrieve_top1(&rec.query, &kb)).map(|r| r.disease.clone()),
                 generated_answer: answer,
                 difficulty: rec.difficulty.clone(),
+                cpj_score,
             };
 
             serde_json::to_writer(&mut out_file, &result)?;
@@ -233,5 +304,42 @@ async fn main() -> anyhow::Result<()> {
 
     out_file.flush()?;
     println!("\nEvaluation complete. Results saved to: {}", out_path.display());
+
+    // Write summary JSON
+    #[derive(Serialize)]
+    struct ConditionSummary {
+        count: usize,
+        avg_plant: f32,
+        avg_disease: f32,
+        avg_symptom: f32,
+        avg_format: f32,
+        avg_completeness: f32,
+        avg_total: f32,
+    }
+
+    let mut summary = std::collections::HashMap::new();
+    for (cond, scores) in &scores_by_condition {
+        let n = scores.len().max(1) as f32;
+        let avg = |f: fn(&CpjScore) -> f32| scores.iter().map(f).sum::<f32>() / n;
+        summary.insert(
+            cond.clone(),
+            ConditionSummary {
+                count: scores.len(),
+                avg_plant: avg(|s| s.plant_accuracy),
+                avg_disease: avg(|s| s.disease_accuracy),
+                avg_symptom: avg(|s| s.symptom_accuracy),
+                avg_format: avg(|s| s.format_adherence),
+                avg_completeness: avg(|s| s.completeness),
+                avg_total: avg(|s| s.total),
+            },
+        );
+    }
+
+    let summary_path = PathBuf::from(format!(
+        r"C:\Users\22414\Desktop\agri-paper\w4\research\llm_eval_summary_{}.json",
+        timestamp
+    ));
+    std::fs::write(&summary_path, serde_json::to_string_pretty(&summary)?)?;
+    println!("Summary saved to: {}", summary_path.display());
     Ok(())
 }
