@@ -29,16 +29,44 @@ ollama run qwen2.5:7b "Say hello"
 
 ### Path B — kalosm（纯 Rust，已验证编译）
 
+#### CPU 模式（默认，零配置）
+
 ```powershell
 cd C:\Users\22414\Desktop\agri-paper\tools\rust_llm_poc
 
-# 1. 编译（已验证通过）
+# 编译验证
 cargo check
 
-# 2. 首次运行会自动从 HuggingFace 下载 bartowski/Qwen2.5-7B-Instruct-GGUF
+# 运行（debug 模式在 CPU 上极慢，评估建议加 --release）
 cargo run
+```
 
-# 成功后应看到模型对农业病害问题的文本生成输出
+#### GPU 模式（CUDA，推荐）
+
+**环境前提：**
+- NVIDIA 驱动已装（`nvidia-smi` 正常）
+- **CUDA 12.6 Toolkit** 已装到 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6`
+- **Visual Studio Build Tools** 已装（提供 `cl.exe`）
+- `kalosm` 的 `cuda` feature 已开启（见 `Cargo.toml`）
+
+**由于 cudarc 0.13.9 编译时需要 cuDNN 头文件，但 cuDNN 未单独安装，项目中已使用一个空的 `cudnn.h` stub 绕过编译期检查。该 workaround 对 Transformer LLM 推理是安全的（不调用 cuDNN API）。**
+
+**运行命令：**
+
+```powershell
+cd C:\Users\22414\Desktop\agri-paper\tools\rust_llm_poc
+
+# 设置 CUDA 12.6 环境（若系统 PATH 已包含 12.6 和 MSVC，可省略）
+$env:CUDA_ROOT = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6"
+$env:CUDA_PATH = "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6"
+$env:CUDNN_LIB = "C:\Users\22414\cudnn_stub"
+$env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin;" + $env:PATH
+
+# 编译（首次开启 cuda feature 需要 1–3 分钟编译 CUDA kernels）
+cargo check
+
+# 运行（首次会自动下载 ~4.5 GB GGUF；GPU 上 7B Q4 单条约几秒到十几秒）
+cargo run --release
 ```
 
 > **注意：** Path B 首次 `cargo run` 需要从 HuggingFace 下载约 4–5 GB 的 GGUF 文件。若网络不稳定，可手动下载 `.gguf` 文件并通过 `LlamaSource::new(FileSource::local("..."))` 改为本地路径加载。

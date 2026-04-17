@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 # Primary path: Kalosm (high-level Rust LLM interface built on Candle)
-kalosm = { version = "0.4", features = ["language"] }
+kalosm = { version = "0.4", features = ["language", "cuda"] }
 
 # Fallback raw Candle components if Kalosm API is insufficient
 # candle-core = "0.10"
