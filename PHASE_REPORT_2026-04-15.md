@@ -33,8 +33,10 @@
 - **编译已验证通过**：修正了 `Cargo.toml` 中缺失的 `language` feature 以及 `LlamaSource::qwen_2_5_7b_instruct()` 方法名。
 - **CUDA GPU 路径已打通**：在 Windows 上配置了 CUDA 12.6 + MSVC 编译链，`kalosm` 的 `cuda` feature 编译成功，RTX 4060 可被正确调用。
 - 增加了交互式终端 REPL，用户可直接输入农业问题并查看模型流式生成结果。
+- **RAG 耦合完成**：REPL 已接入 30 条记录的知识库，通过关键词重叠实现 `retrieve_top1()`，并将检索到的上下文注入 prompt 后生成。
+- **评估二进制完成**：编写 `src/eval.rs`，支持 80 条 stratified 采样在三种条件（NoContext / CropOnly / ProposedTop1）下的批量评估与 JSONL/JSON 输出。
 - 这意味着 agri-paper **不再唯一依赖 Ollama**；若 Ollama 安装困难，可直接使用 `kalosm`（CPU 或 CUDA GPU）加载 GGUF 量化模型运行评估。
-- 当前阻塞因此从"缺少 Ollama"收窄为"需要下载并运行本地量化模型（约 4–5 GB）"。
+- 当前阻塞因此从"缺少 Ollama"收窄为"需要下载并运行本地 7B 量化模型（约 4–5 GB）"。已有的 14B 模型可用于功能验证，但速度不足以支撑 80 条 benchmark。
 
 ---
 
@@ -42,7 +44,7 @@
 
 | # | 阻塞项 | 影响 | 解除条件 |
 |---|--------|------|----------|
-| 1 | **本地量化模型未下载/运行** | 高 | 下载 Qwen2.5-7B-Instruct-GGUF（通过 `kalosm` 自动拉取或手动放置）并执行 `cargo run` / `python w4/research/run_llm_eval.py` |
+| 1 | **7B 量化模型下载阻塞** | 高 | HuggingFace `curl` 在 Windows 上报 `CRYPT_E_NO_REVOCATION_CHECK`；需手动下载 Qwen2.5-7B-Instruct-GGUF 并放置到本地模型目录，然后执行 `cargo run --bin eval` |
 | 2 | **AI-AgriBench 数据需申请** | 中 | 填写 [aiagribench.org](https://aiagribench.org) 官网表单获取测试集 JSON |
 | 3 | **GitHub SSL 证书验证失败** | 低-中 | 配置系统证书或换用 git/代理方式访问 GitHub |
 
@@ -56,7 +58,7 @@
 |------|----------|----------|
 | 投稿 SCI/SSCI 期刊 | 🔴 高风险 | 不执行（数据与实验均不足） |
 | 上传 arXiv 预印本 | 🟡 中风险 | 暂不执行（需先补充 LLM 实验才能诚实标注） |
-| 补充真实 LLM 评估 | ✅ 已就绪 | **方案已就绪，两条技术路径（Ollama / kalosm）均已打通，待下载模型** |
+| 补充真实 LLM 评估 | 🟡 中风险 | **eval 二进制已就绪，待 7B 模型下载后执行 80 条 benchmark** |
 | 扩大知识库规模 | ✅ 可并行 | **方案已就绪，阻塞于本地模型和 AI-AgriBench 数据申请** |
 | 大规模代码/数据重构 | 🟡 低优先级 | 当前窗口以文档准备与交叉风险清理为主，暂缓大改 |
 
@@ -65,21 +67,19 @@
 ## 5. 下一步建议（按优先级）
 
 ### P0（解锁所有后续工作）
-1. **运行本地模型**
-   ```powershell
-   # 路径 A：Ollama
-   # 从 https://ollama.com/download/windows 下载安装
-   ollama pull qwen2.5:7b
-
-   # 路径 B：kalosm（纯 Rust，已验证编译）
-   cd C:\Users\22414\Desktop\agri-paper\tools\rust_llm_poc
-   cargo run   # 首次运行会自动从 HuggingFace 下载模型
-   ```
+1. **获取 7B 本地模型**
+   - 因 Windows SSL 证书吊销检查失败，HuggingFace 自动下载不可行。
+   - 建议手动从浏览器或镜像站下载 `Qwen2.5-7B-Instruct-Q4_K_M.gguf`，放置到 `C:\Users\22414\Desktop\model\`。
+   - 放置后运行：
+     ```powershell
+     cd C:\Users\22414\Desktop\agri-paper\tools\rust_llm_poc
+     cargo run --bin eval
+     ```
 
 ### P1（agri-paper 窗口的下一步动作）
-2. **实现并运行 `run_llm_eval.py`**
-   - 在本地模型就绪后，根据 `llm_eval_plan.md` 编写完整脚本。
-   - 生成 `w4/research/llm_eval_results.json` 和评估报告。
+2. **运行 `cargo run --bin eval`**
+   - 在 7B 模型就绪后，执行 80 条 stratified benchmark。
+   - 检查生成的 `llm_eval_raw_*.jsonl` 和 `llm_eval_summary_*.json`。
 
 3. **爬取 USDA IPM Crop Profiles**
    - 在本地模型就绪后，根据 `kb_expansion_plan.md` 编写 `ipm_crawler.py`。

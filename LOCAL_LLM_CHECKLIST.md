@@ -1,6 +1,6 @@
 # 本地 LLM 就绪后操作清单（agri-paper）
 
-**当前状态：** 本地量化模型尚未下载运行，阻塞 agri-paper 的 LLM 评估和知识库扩展。  
+**当前状态：** 14B 本地模型已可用并验证功能正确，但速度不足以支撑 80 条 benchmark；7B 模型下载因 Windows SSL 证书吊销检查失败而阻塞。RAG 耦合与 eval 二进制已完成。  
 **本清单目标：** 一旦本地模型就绪，按顺序执行以下步骤即可推进项目。  
 **支持两条路径：**
 - **Path A: Ollama** — 传统方案，服务化 REST API。
@@ -69,30 +69,31 @@ cargo check
 cargo run --release
 ```
 
-> **注意：** Path B 首次 `cargo run` 需要从 HuggingFace 下载约 4–5 GB 的 GGUF 文件。若网络不稳定，可手动下载 `.gguf` 文件并通过 `LlamaSource::new(FileSource::local("..."))` 改为本地路径加载。
+> **注意：** 由于 Windows SSL 证书吊销检查问题，Path B 首次 `cargo run` 自动从 HuggingFace 下载约 4–5 GB 的 GGUF 文件可能会失败。建议手动下载 `.gguf` 文件并放置到 `C:\Users\22414\Desktop\model\`；代码会自动检测本地 7B/14B 模型文件并优先加载。
 
 ---
 
 ## Step 2：运行真实 LLM 生成评估（约 30–60 分钟）
 
-评估脚本已准备就绪：
+评估二进制已准备就绪：
 
 ```powershell
-cd C:\Users\22414\Desktop\agri-paper
-python w4\research\run_llm_eval.py
+cd C:\Users\22414\Desktop\agri-paper\tools\rust_llm_poc
+
+# 确保 7B 模型已放置到本地模型目录后运行
+cargo run --bin eval --release
 ```
 
-**脚本会自动做：**
-- 检查 Ollama 可用性和模型存在性（若使用 Path B，需先自行确保 `kalosm` 可运行，再适配脚本中的客户端调用）
+**eval 会自动做：**
+- 加载本地检测到的模型（优先 7B，回退 14B）
 - 从 210 条 benchmark 中 stratified 采样 80 条（easy 30 + medium 30 + hard 20）
 - 对每条查询在 3 种检索条件下分别调用本地 LLM：
   - Baseline-A：无检索上下文
-  - Baseline-B：仅作物过滤（该作物全部 3 条记录）
-  - Proposed：symptom-level 排序后的 top-1 记录
-- 自动评分（诊断正确性 / 治疗完整性 / 安全性黑名单筛查）
+  - Baseline-B：仅作物过滤（该作物全部记录）
+  - Proposed：基于关键词重叠的 top-1 RAG 记录
 - 输出：
-  - `w4/research/llm_eval_results_YYYYMMDD_HHMMSS.json`（汇总统计）
-  - `w4/research/llm_eval_raw_YYYYMMDD_HHMMSS.jsonl`（原始生成结果）
+  - `llm_eval_raw_<condition>_<timestamp>.jsonl`（原始生成结果）
+  - `llm_eval_summary_<timestamp>.json`（汇总统计）
 
 **Step 2 完成后：** 将汇总结果更新到 `w4/arxiv/experiments.tex` 和 `w4/writer/experiments.tex` 中，替换/补充现有的代理评估表格。
 
@@ -176,7 +177,7 @@ zip arxiv_upload.zip main_arxiv.tex *.tex *.bib
 
 | 阻塞项 | 影响 | 解除后最大收益 |
 |--------|------|----------------|
-| 本地模型下载运行 | 高 | Step 2（LLM 评估）和 Step 4.1（PDF 结构化）同时解锁 |
+| 7B 模型手动下载完成 | 高 | Step 2（LLM 评估）和 Step 4.1（PDF 结构化）同时解锁 |
 | AI-AgriBench 数据获批 | 中 | Step 4.2 解锁，知识库规模大幅提升 |
 | GitHub SSL 修复 | 低-中 | 方便自动化下载公开数据集和工具 |
 

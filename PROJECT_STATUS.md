@@ -14,11 +14,13 @@ This repository contains a **research prototype** for a local-first, configurati
   - Erroneous citation metadata (including a suspected fabricated DOI/volume for `agrarian2025`) was corrected.
   - The proxy evaluation table in `experiments.tex` was explicitly labeled as **simulated / no actual LLM invoked**.
   - A dangling Git submodule was removed and the knowledge-base structure was normalized.
-- **Rust-native local inference path verified:** `tools/rust_llm_poc/` compiles successfully against `kalosm 0.4` (Candle backend), including CUDA GPU acceleration on an RTX 4060. An interactive terminal REPL is available. This provides a fully Rust-native alternative to Ollama for running the Qwen2.5-7B evaluation.
+- **Rust-native local inference path verified:** `tools/rust_llm_poc/` compiles successfully against `kalosm 0.4` (Candle backend), including CUDA GPU acceleration on an RTX 4060. An interactive terminal REPL is available, and a standalone `eval` binary has been created for the 80-record stratified benchmark.
+- **RAG coupling verified:** The REPL now loads a 30-record knowledge base (`agricultural_diseases_all.jsonl`) and injects the top-1 retrieved record into the prompt before generation, using a naive keyword-overlap retriever.
+- **Eval binary ready:** `tools/rust_llm_poc/src/eval.rs` implements the full stratified benchmark (Baseline-A: no context, Baseline-B: crop filter, Proposed: top-1 RAG). It compiles but has not yet been run end-to-end.
 
 ### What remains incomplete
 - **No real LLM evaluation has been performed.** All retrieval and latency experiments are integration tests that bypass the LLM generation layer.
-  - *The evaluation script (`w4/research/run_llm_eval.py`) and the Rust PoC (`tools/rust_llm_poc/`) are both ready; the only remaining blocker is downloading the quantized model and executing the 80-record stratified benchmark.*
+  - *The Rust eval binary (`tools/rust_llm_poc/src/eval.rs`) is ready and `cargo check` passes. The only remaining blocker is obtaining a 7B quantized model that can run the 80-record stratified benchmark at feasible speed on an RTX 4060 8GB. A local 14B model is available and has been used to verify functional correctness, but it is too slow for the full benchmark.*
 - **The knowledge base remains small:** 30 seed records expanded to 210 templated QA pairs. This is sufficient for architecture-level prototyping but not for generalization claims.
 - **The TOML-driven configuration has not yet been validated end-to-end in the retrieval benchmark.** The benchmark tests still construct the agriculture profile programmatically for CI reproducibility.
 
@@ -28,7 +30,7 @@ This repository contains a **research prototype** for a local-first, configurati
 - External reviewers or employers examining this repository should read `PHASE_REPORT_2026-04-15.md` and the present file before drawing conclusions about earlier commits.
 
 ### Next steps (blocked on local environment)
-1. Download and run a local quantized model (Qwen2.5-7B-Instruct Q4_K_M) via either **Ollama** or the **Rust `kalosm` PoC**, then execute the 80-record stratified evaluation (`w4/research/llm_eval_plan.md` + `LOCAL_LLM_CHECKLIST.md`).
+1. Obtain a 7B quantized model (Qwen2.5-7B-Instruct Q4_K_M) — manual download is needed because automated HuggingFace downloads fail with a Windows SSL certificate revocation error. Then execute the 80-record stratified evaluation via `cargo run --bin eval` in `tools/rust_llm_poc/`.
 2. Scale the knowledge base to 500+ records via public datasets (`w4/research/kb_expansion_plan.md`).
 3. Re-compile the arXiv PDF from the corrected sources.
 
