@@ -47,7 +47,7 @@ agri-paper/
 - The knowledge base is small (30 seed records).
 - The 210 QA pairs are **template-generated surface paraphrases**, not independent samples.
 - **No live LLM evaluation has been executed yet.** The retrieval and latency experiments are integration tests that bypass the generation layer.
-  - *Update:* A Rust-native inference path (`kalosm` → `Qwen2.5-7B-Instruct-GGUF`) has been verified to compile; the next step is downloading the quantized model and running the 80-record stratified benchmark.
+  - *Update:* A Rust-native inference path (`kalosm` → `Qwen2.5-7B-Instruct-GGUF`) has been verified to compile, **including CUDA GPU acceleration on RTX 4060**. An interactive terminal REPL is available. The next step is downloading the quantized model and running the 80-record stratified benchmark.
 - The retrieval benchmark uses programmatic profile construction for CI reproducibility, not yet a pure TOML-loaded end-to-end test.
 
 See `PROJECT_STATUS.md` and `PHASE_REPORT_2026-04-15.md` for full details.
@@ -65,7 +65,8 @@ cat w4/research/llm_eval_plan.md
 
 # 3. Check the Rust-native LLM PoC
 cd tools/rust_llm_poc
-cargo check        # kalosm compiles; next: cargo run to download model
+cargo check        # kalosm compiles (CPU or CUDA GPU)
+cargo run --release  # GPU inference recommended if CUDA 12.6 is installed
 ```
 
 ---

@@ -31,7 +31,9 @@
 
 - 在 `tools/rust_llm_poc/` 中完成了基于 `kalosm 0.4`（Candle 后端）的纯 Rust 本地 LLM 推理 PoC。
 - **编译已验证通过**：修正了 `Cargo.toml` 中缺失的 `language` feature 以及 `LlamaSource::qwen_2_5_7b_instruct()` 方法名。
-- 这意味着 agri-paper **不再唯一依赖 Ollama**；若 Ollama 安装困难，可直接使用 `kalosm` 加载 HuggingFace 上的 GGUF 量化模型运行评估。
+- **CUDA GPU 路径已打通**：在 Windows 上配置了 CUDA 12.6 + MSVC 编译链，`kalosm` 的 `cuda` feature 编译成功，RTX 4060 可被正确调用。
+- 增加了交互式终端 REPL，用户可直接输入农业问题并查看模型流式生成结果。
+- 这意味着 agri-paper **不再唯一依赖 Ollama**；若 Ollama 安装困难，可直接使用 `kalosm`（CPU 或 CUDA GPU）加载 GGUF 量化模型运行评估。
 - 当前阻塞因此从"缺少 Ollama"收窄为"需要下载并运行本地量化模型（约 4–5 GB）"。
 
 ---
@@ -99,7 +101,7 @@
 | `w4/research/llm_eval_plan.md` | ✅ 已完成 | LLM 评估完整实验方案 |
 | `w4/research/kb_expansion_plan.md` | ✅ 已完成 | 知识库扩展完整方案 |
 | `PHASE_REPORT_2026-04-15.md` | ✅ 已完成 | 本阶段报告（含晚间 kalosm 更新） |
-| `tools/rust_llm_poc/` | ✅ 编译通过 | Rust-native 本地推理 PoC |
+| `tools/rust_llm_poc/` | ✅ 编译通过（含 CUDA GPU） | Rust-native 本地推理 PoC + 交互式 REPL |
 | devbase 注册表路径 | ✅ 已修复 | `agri-paper` 改为绝对路径，`agri_knowledge_base` 重复条目已删除 |
 
 ---

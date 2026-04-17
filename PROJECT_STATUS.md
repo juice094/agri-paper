@@ -14,7 +14,7 @@ This repository contains a **research prototype** for a local-first, configurati
   - Erroneous citation metadata (including a suspected fabricated DOI/volume for `agrarian2025`) was corrected.
   - The proxy evaluation table in `experiments.tex` was explicitly labeled as **simulated / no actual LLM invoked**.
   - A dangling Git submodule was removed and the knowledge-base structure was normalized.
-- **Rust-native local inference path verified:** `tools/rust_llm_poc/` compiles successfully against `kalosm 0.4` (Candle backend). This provides an alternative to Ollama for running the Qwen2.5-7B evaluation.
+- **Rust-native local inference path verified:** `tools/rust_llm_poc/` compiles successfully against `kalosm 0.4` (Candle backend), including CUDA GPU acceleration on an RTX 4060. An interactive terminal REPL is available. This provides a fully Rust-native alternative to Ollama for running the Qwen2.5-7B evaluation.
 
 ### What remains incomplete
 - **No real LLM evaluation has been performed.** All retrieval and latency experiments are integration tests that bypass the LLM generation layer.
