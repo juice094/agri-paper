@@ -17,6 +17,10 @@ async fn main() -> anyhow::Result<()> {
         .build()
         .await?;
 
+    let mut chat = model
+        .chat()
+        .with_system_prompt("You are an agricultural expert. Help farmers diagnose crop diseases and provide integrated pest management advice in a concise, practical manner.");
+
     println!("Model ready. Type an agricultural question below.");
     println!("Commands: 'exit' or 'quit' to stop.\n");
 
@@ -42,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
         }
 
         println!("\n[Assistant]:");
-        model(input).to_std_out().await?;
+        chat(input).to_std_out().await?;
         println!("\n");
     }
 
