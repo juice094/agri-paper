@@ -241,8 +241,23 @@ async fn main() -> anyhow::Result<()> {
 
     let kb = load_kb()?;
     let benchmark = load_benchmark()?;
-    let sampled = stratified_sample(&benchmark);
-    println!("Benchmark: {} total, sampled {} records\n", benchmark.len(), sampled.len());
+    let mut sampled = stratified_sample(&benchmark);
+
+    // Parse optional --offset and --limit for chunked execution
+    let args: Vec<String> = std::env::args().collect();
+    let mut offset = 0usize;
+    let mut limit = sampled.len();
+    for i in 1..args.len() {
+        if args[i] == "--offset" && i + 1 < args.len() {
+            offset = args[i + 1].parse().unwrap_or(0);
+        }
+        if args[i] == "--limit" && i + 1 < args.len() {
+            limit = args[i + 1].parse().unwrap_or(sampled.len());
+        }
+    }
+    let end = (offset + limit).min(sampled.len());
+    let slice = &sampled[offset..end];
+    println!("Benchmark: {} total, sampled {} records, running [{}..{}]\n", benchmark.len(), sampled.len(), offset, end);
 
     let base_prompt = "You are an agricultural expert. Help farmers diagnose crop diseases and provide integrated pest management advice in a concise, practical manner.";
 
@@ -257,19 +272,20 @@ async fn main() -> anyhow::Result<()> {
         .unwrap()
         .as_secs();
     let out_path = PathBuf::from(format!(
-        r"C:\Users\22414\Desktop\agri-paper\w4\research\llm_eval_raw_{}.jsonl",
-        timestamp
+        r"C:\Users\22414\Desktop\agri-paper\w4\research\llm_eval_raw_{}_{}_{}.jsonl",
+        timestamp, offset, end
     ));
     let mut out_file = std::io::BufWriter::new(std::fs::File::create(&out_path)?);
 
     // Accumulate scores per condition for summary
     let mut scores_by_condition: std::collections::HashMap<String, Vec<CpjScore>> = std::collections::HashMap::new();
 
-    for (i, rec) in sampled.iter().enumerate() {
+    for (i, rec) in slice.iter().enumerate() {
+        let global_idx = offset + i + 1;
         for (cond_name, cond_fn) in &conditions {
             println!(
                 "[{}/{}] {} | {} | {}",
-                i + 1,
+                global_idx,
                 sampled.len(),
                 cond_name,
                 rec.difficulty,
@@ -336,8 +352,8 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let summary_path = PathBuf::from(format!(
-        r"C:\Users\22414\Desktop\agri-paper\w4\research\llm_eval_summary_{}.json",
-        timestamp
+        r"C:\Users\22414\Desktop\agri-paper\w4\research\llm_eval_summary_{}_{}_{}.json",
+        timestamp, offset, end
     ));
     std::fs::write(&summary_path, serde_json::to_string_pretty(&summary)?)?;
     println!("Summary saved to: {}", summary_path.display());
