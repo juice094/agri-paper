@@ -19,6 +19,10 @@ Key components:
 - **Knowledge base** in `w3/engineer/agri_knowledge_base/` (30 crop-disease records)
 - **Research plans** in `w4/research/` for LLM evaluation and knowledge-base expansion
 - **Rust-native LLM PoC** in `tools/rust_llm_poc/` (local inference via [`kalosm`](https://github.com/floneum/floneum) + Candle)
+- **Configuration package** in `configs/` (Persona TOML for clarity-core integration)
+- **Schema definitions** in `schemas/` (devbase `agri_observations` migration DDL)
+- **Domain vocabulary** in `docs/` (agricultural tag namespace for devbase registry)
+- **Cross-project roadmap** in `w4/research/MATURE_ROADMAP_2026-04-17.md` (Phase 1–4 with competitor benchmarks)
 
 ---
 
@@ -26,18 +30,28 @@ Key components:
 
 ```
 agri-paper/
+├── configs/               # Persona TOML for clarity-core Domain-as-Config integration
+│   └── agri_expert.toml   # Agricultural expert persona (golden sample)
 ├── datasets/              # Agricultural QA benchmark and generation scripts
+├── docs/                  # Domain vocabulary and tag namespace documentation
+│   └── agri_tag_vocabulary.md
+├── schemas/               # Database migration DDL for devbase
+│   └── agri_observations.sql
 ├── tools/                 # Rust-native local-LLM inference PoC
+│   └── rust_llm_poc/
+│       ├── src/main.rs    # Interactive REPL with RAG coupling
+│       └── src/eval.rs    # 80-record stratified benchmark + CPJ 5-dim scoring
 ├── w1/                    # Early-phase artifacts (literature matrix, outline)
 ├── w3/                    # Mid-phase artifacts (CNKI research, knowledge base, demo)
 ├── w4/
 │   ├── arxiv/             # arXiv submission LaTeX sources
 │   ├── writer/            # Internal writer-draft LaTeX sources
-│   ├── research/          # Experiment plans and evaluation scripts
+│   ├── research/          # Experiment plans, MATURE_ROADMAP, evaluation scripts
 │   └── engineer/          # Validation results and metrics
-├── PHASE_REPORT_2026-04-15.md   # Latest audit and status report
+├── PHASE_REPORT_2026-04-15.md   # Audit and status report
 ├── LOCAL_LLM_CHECKLIST.md       # Step-by-step guide to run local model evals
-└── PROJECT_STATUS.md            # Important notice on project maturity
+├── PROJECT_STATUS.md            # Important notice on project maturity
+└── MATURE_ROADMAP_2026-04-17.md # Cross-project Phase 1–4 roadmap
 ```
 
 ---
@@ -47,8 +61,9 @@ agri-paper/
 - The knowledge base is small (30 seed records).
 - The 210 QA pairs are **template-generated surface paraphrases**, not independent samples.
 - **No live LLM evaluation has been executed yet.** The retrieval and latency experiments are integration tests that bypass the generation layer.
-  - *Update:* A Rust-native inference path (`kalosm` → `Qwen2.5-7B-Instruct-GGUF`) has been verified to compile, **including CUDA GPU acceleration on RTX 4060**. An interactive terminal REPL is available. The next step is downloading the quantized model and running the 80-record stratified benchmark.
+  - *Update:* A Rust-native inference path (`kalosm` → `Qwen2.5`) has been verified to compile, **including CUDA GPU acceleration on RTX 4060**. An interactive terminal REPL with RAG injection is available. A standalone `eval` binary with CPJ-inspired 5-dimensional scoring is ready (`cargo check` passes). The next step is obtaining a 7B quantized model (14B is too slow for the 80-record benchmark).
 - The retrieval benchmark uses programmatic profile construction for CI reproducibility, not yet a pure TOML-loaded end-to-end test.
+- **Cross-project integration in progress:** Persona TOML (`configs/agri_expert.toml`), tag vocabulary (`docs/agri_tag_vocabulary.md`), and devbase schema (`schemas/agri_observations.sql`) have been delivered. See `MATURE_ROADMAP_2026-04-17.md` for Phase 1–4 planning.
 
 See `PROJECT_STATUS.md` and `PHASE_REPORT_2026-04-15.md` for full details.
 
@@ -68,13 +83,20 @@ See `PROJECT_STATUS.md` and `PHASE_REPORT_2026-04-15.md` for full details.
 # 1. Browse the benchmark
 cat datasets/agricultural_diseases_all.jsonl | head -n 3
 
-# 2. Inspect the evaluation plan
+# 2. Inspect the evaluation plan (v2 with CPJ scoring + Agri-CM³ stratification)
 cat w4/research/llm_eval_plan.md
+cat w4/research/MATURE_ROADMAP_2026-04-17.md
 
 # 3. Check the Rust-native LLM PoC
 cd tools/rust_llm_poc
-cargo check        # kalosm compiles (CPU or CUDA GPU)
-cargo run --release  # GPU inference recommended if CUDA 12.6 is installed
+cargo check --bin eval   # kalosm compiles (CPU or CUDA GPU)
+cargo run --bin eval --release  # Requires 7B GGUF model
+
+# 4. Inspect the clarity-core integration persona sample
+cat configs/agri_expert.toml
+
+# 5. Review the devbase schema migration
+cat schemas/agri_observations.sql
 ```
 
 ---
